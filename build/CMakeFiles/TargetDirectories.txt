@@ -1,0 +1,16 @@
+/home/johnnyhy/final_proj/build/CMakeFiles/install/strip.dir
+/home/johnnyhy/final_proj/build/CMakeFiles/edit_cache.dir
+/home/johnnyhy/final_proj/build/CMakeFiles/intrinsics_gen.dir
+/home/johnnyhy/final_proj/build/CMakeFiles/rebuild_cache.dir
+/home/johnnyhy/final_proj/build/CMakeFiles/list_install_components.dir
+/home/johnnyhy/final_proj/build/CMakeFiles/install/local.dir
+/home/johnnyhy/final_proj/build/CMakeFiles/install.dir
+/home/johnnyhy/final_proj/build/final_pass/CMakeFiles/install/strip.dir
+/home/johnnyhy/final_proj/build/final_pass/CMakeFiles/install/local.dir
+/home/johnnyhy/final_proj/build/final_pass/CMakeFiles/install.dir
+/home/johnnyhy/final_proj/build/final_pass/CMakeFiles/install-FINAL.dir
+/home/johnnyhy/final_proj/build/final_pass/CMakeFiles/edit_cache.dir
+/home/johnnyhy/final_proj/build/final_pass/CMakeFiles/rebuild_cache.dir
+/home/johnnyhy/final_proj/build/final_pass/CMakeFiles/FINAL.dir
+/home/johnnyhy/final_proj/build/final_pass/CMakeFiles/install-FINAL-stripped.dir
+/home/johnnyhy/final_proj/build/final_pass/CMakeFiles/list_install_components.dir

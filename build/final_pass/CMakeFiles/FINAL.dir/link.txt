@@ -1,0 +1,1 @@
+/usr/bin/c++ -fPIC   -Wl,-rpath-link,  -Wl,-O3 -Wl,--gc-sections -shared  -o FINAL.so CMakeFiles/FINAL.dir/final_pass.cpp.o -Wl,-rpath,"\$ORIGIN/../lib" 
