@@ -8,6 +8,14 @@
 
 using namespace llvm;
 
+void sign(Instruction& i) {
+    // use i.insertAfter() to place sign instructions after i
+}
+
+void auth(Instruction& i) {
+
+}
+
 namespace {
     struct FINAL : public FunctionPass {
         static char ID;
@@ -35,7 +43,6 @@ namespace {
                         // sign after all users that write to callInst's ops
                         errs() << "Indirect call!!! " << i << "\n";
                     }
-                    // errs() << i << "\n";
 
                     auto ret = dyn_cast<ReturnInst>(&i);
                     if (ret) {
