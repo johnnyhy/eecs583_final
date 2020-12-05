@@ -22,6 +22,7 @@ namespace {
         FINAL() : FunctionPass(ID) {}
 
         bool runOnFunction(Function& F) override {
+            errs() << F.getName() << "\n";
             for (BasicBlock& BB : F) {
                 for (BasicBlock::iterator I = BB.begin(); I != BB.end();) {
                     Instruction& i = *I++;
@@ -36,27 +37,28 @@ namespace {
                     // for every load pointing to a function
                     // if load's operand points to a function
                     //      insert auth
+
                     // virtual calls are already identified correctly here
                     auto call = dyn_cast<CallInst>(&i);
                     if (call && call->isIndirectCall()) {
                         // this is where we need to insert auths
                         // sign after all users that write to callInst's ops
-                        errs() << "Indirect call!!! " << i << "\n";
+                        errs() << "Indirect CallInst " << i << "\n";
                     }
 
                     auto ret = dyn_cast<ReturnInst>(&i);
                     if (ret) {
                         // this is where we need to insert auths
                         // sign return address at start of function
-                        errs() << "Indirect call!!! " << i << "\n";
+                        errs() << "ReturnInst " << i << "\n";
                     }
                 }
             }
             // errs() << "Hello: ";
             return false;
         }
-    }; // end of struct Hello
-}  // end of anonymous namespace
+    };
+}
 
 char FINAL::ID = 0;
 static RegisterPass<FINAL> X("FINAL", "Hello World Pass",
