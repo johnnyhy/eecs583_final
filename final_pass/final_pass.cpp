@@ -28,6 +28,7 @@
  *              https://github.com/apple/llvm-project/blob/a63a81bd9911f87a0b5dcd5bdd7ccdda7124af87/clang/docs/PointerAuthentication.rst  
  */
 // Standard Includes
+#include <string>
 
 // LLVM Includes
 #include "llvm/Pass.h"
@@ -40,11 +41,28 @@
 // OpenSSL Includes
 #include "openssl/sha.h"
 
+// Custom Includes
+#include "utils.h"
+
+// Options and Config
+const size_t PTR_LEN = 8;                   // in bytes for all
+const size_t KEY_LEN = 32;
+const size_t SIG_LEN = 32;
+const std::string KEY_PATH = "auth.key";
+const uint8_t KEY[KEY_LEN] = { };
+
 using namespace llvm;
 
 // SIGN a raw pointer, producing a signed pointer
 void sign(Instruction& i) {
     // use i.insertAfter() to place sign instructions after i
+
+    uint8_t ptrval[PTR_LEN] = { 0xff, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef };
+    uint8_t digest[SIG_LEN] = {}; //
+    SHA256(ptrval, PTR_LEN, digest);
+
+    // print the digest as a hex-string to errs
+    printBufAsHex(digest, SIG_LEN, errs());
 }
 
 // AUTHENTICATE a signed pointer, producing a raw pointer
@@ -58,7 +76,11 @@ namespace {
         static char ID;
         FINAL() : FunctionPass(ID) {}
 
-        bool runOnFunction(Function& F) override {
+        bool runOnFunction(Function& F) override { 
+            if (F.getName() == "main") {
+                sign(*(*F.begin()).begin());
+            }
+
             errs() << F.getName() << "\n";
             for (BasicBlock& BB : F) {
                 for (BasicBlock::iterator I = BB.begin(); I != BB.end();) {
@@ -102,6 +124,7 @@ namespace {
         }
     };
 }
+
 
 // Register the pass
 char FINAL::ID = 0;
