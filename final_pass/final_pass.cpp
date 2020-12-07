@@ -1,4 +1,35 @@
+/* ARM64e-Inspired Code Pointer Integrity at the LLVM IR Level
+ *
+ * EECS 583 - Advanced Compiler Construction 
+ * Final Project
+ * 
+ * Authors: Johnathan Yang and Owen Webb
+ * Date: 12/16/2020
+ * 
+ * Description: The following software implements an LLVM IR pass that ensures 
+ * Code Pointer Integrity (CPI) using a methodology similar to the hardware 
+ * Pointer Authentication Codes (PACs) implemented in Apple's ARM64e architecture.
+ * By enforcing CPI at the IR level, we believe our implementation offers 
+ * increased flexibility and security at the cost of some efficiency advantages 
+ * when compared to the ARM64e methodology. See our research write-up at the 
+ * link below for more information and a detailed security analysis.
+ * 
+ * References and further reading:
+ *      (1) J. Yang, O. Webb. ARM64e-Inspired Code Pointer Integrity in LLVM IR. 
+ *              https://docs.google.com/document/d/18yBso_evxJY6Rr9Wv1-cvj49Eq2qZul38kpD4mtxSB0/edit?usp=sharing
+ *      (2) J. McCall, A. Bougacha. ARM64e, An ABI for Pointer Authentication.
+ *              https://llvm.org/devmtg/2019-10/slides/McCall-Bougacha-arm64e.pdf
+ *      (3) Qualcomm Technologies. Pointer Authentication on ARMv8.3.
+ *              https://www.qualcomm.com/media/documents/files/whitepaper-pointer-authentication-on-armv8-3.pdf
+ *      (4) M.R. Khandaker, W. Liu, A. Nasar, Z. Wang, J. Yang. Origin-sensitive 
+ *          Control Flow Integrity.
+ *              https://www.usenix.org/system/files/sec19-khandaker.pdf
+ *      (5) Apple LLVM Project. Pointer Authentication.
+ *              https://github.com/apple/llvm-project/blob/a63a81bd9911f87a0b5dcd5bdd7ccdda7124af87/clang/docs/PointerAuthentication.rst  
+ */
+// Standard Includes
 
+// LLVM Includes
 #include "llvm/Pass.h"
 #include "llvm/IR/Function.h"
 #include "llvm/Support/raw_ostream.h"
@@ -6,16 +37,22 @@
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/CallSite.h"
 
+// OpenSSL Includes
+#include "openssl/sha.h"
+
 using namespace llvm;
 
+// SIGN a raw pointer, producing a signed pointer
 void sign(Instruction& i) {
     // use i.insertAfter() to place sign instructions after i
 }
 
+// AUTHENTICATE a signed pointer, producing a raw pointer
 void auth(Instruction& i) {
 
 }
 
+// LLVM Pass implementation
 namespace {
     struct FINAL : public FunctionPass {
         static char ID;
@@ -26,6 +63,12 @@ namespace {
             for (BasicBlock& BB : F) {
                 for (BasicBlock::iterator I = BB.begin(); I != BB.end();) {
                     Instruction& i = *I++;
+
+                    // TODO: How to identify sign locations? 
+                    //      Points-to DFA? 
+                    //      Just sign assignments to pointers to functions?
+                    //      ...
+                    //
                     // auto load = dyn_cast<LoadInst>(&i);
                     // if (load) {
                     //     Type* loadOpType = load->getPointerOperand()->getType();
@@ -38,7 +81,7 @@ namespace {
                     // if load's operand points to a function
                     //      insert auth
 
-                    // virtual calls are already identified correctly here
+                    // Identifies both C++ Virtual Calls and C Function Pointer Calls
                     auto call = dyn_cast<CallInst>(&i);
                     if (call && call->isIndirectCall()) {
                         // this is where we need to insert auths
@@ -46,6 +89,7 @@ namespace {
                         errs() << "Indirect CallInst " << i << "\n";
                     }
 
+                    // Identify Return calls
                     auto ret = dyn_cast<ReturnInst>(&i);
                     if (ret) {
                         // this is where we need to insert auths
@@ -54,13 +98,13 @@ namespace {
                     }
                 }
             }
-            // errs() << "Hello: ";
             return false;
         }
     };
 }
 
+// Register the pass
 char FINAL::ID = 0;
-static RegisterPass<FINAL> X("FINAL", "Hello World Pass",
+static RegisterPass<FINAL> X("FINAL", "CPI Pass",
     false /* Only looks at CFG */,
     false /* Analysis Pass */);
