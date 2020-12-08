@@ -87,9 +87,9 @@ std::string auth(Instruction& i) {
 
 // LLVM Pass implementation
 namespace {
-    struct FINAL : public FunctionPass {
+    struct cpi : public FunctionPass {
         static char ID;
-        FINAL() : FunctionPass(ID) {}
+        cpi() : FunctionPass(ID) {}
 
         bool runOnFunction(Function& F) override {
             // insert sign (for return addresses)
@@ -116,7 +116,7 @@ namespace {
                         bool ptrToFunc = false;
 
                         if (type->isPointerTy() && type->getContainedType(0)->isFunctionTy()) {
-                            Value* rhs = store->getValueOperand();
+                        //    Value* rhs = store->getValueOperand();
                             ptrToFunc = true;
                         //          insert:
                         //              if src in map of signed pointers
@@ -143,7 +143,7 @@ namespace {
 
 
 // Register the pass
-char FINAL::ID = 0;
-static RegisterPass<FINAL> X("FINAL", "CPI Pass",
+char cpi::ID = 0;
+static RegisterPass<cpi> X("cpi", "CPI Pass",
     false /* Only looks at CFG */,
     false /* Analysis Pass */);
