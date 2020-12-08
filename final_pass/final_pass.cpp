@@ -40,6 +40,8 @@
 
 // OpenSSL Includes
 #include "openssl/sha.h"
+#include "openssl/hmac.h"
+#include "openssl/evp.h"
 
 // Custom Includes
 #include "utils.h"
@@ -54,20 +56,31 @@ const uint8_t KEY[KEY_LEN] = { };
 using namespace llvm;
 
 // SIGN a raw pointer, producing a signed pointer
-void sign(Instruction& i) {
-    // use i.insertAfter() to place sign instructions after i
+std::string sign(Instruction& i) {
+    (void)i;
+    std::string digest;
 
+    uint8_t k[KEY_LEN] = {};
     uint8_t ptrval[PTR_LEN] = { 0xff, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef };
-    uint8_t digest[SIG_LEN] = {}; //
-    SHA256(ptrval, PTR_LEN, digest);
+    uint8_t digest1[SIG_LEN] = {};
 
-    // print the digest as a hex-string to errs
-    printBufAsHex(digest, SIG_LEN, errs());
+    // plain 256 hash
+    SHA256(ptrval, PTR_LEN, digest1);
+    printBufAsHex(digest1, SIG_LEN, errs());
+
+    // HMAC 
+    uint8_t* digest2 = HMAC(EVP_sha256(), k, KEY_LEN, ptrval, PTR_LEN, nullptr, nullptr);
+    printBufAsHex(digest2, SIG_LEN, errs());
+
+    // use i.insertAfter() to place sign instructions after i
+    return digest;
 }
 
 // AUTHENTICATE a signed pointer, producing a raw pointer
-void auth(Instruction& i) {
-
+std::string auth(Instruction& i) {
+    (void)i;
+    std::string raw_ptr;
+    return raw_ptr;
 }
 
 // LLVM Pass implementation
