@@ -1,33 +1,35 @@
 /* ARM64e-Inspired Code Pointer Integrity at the LLVM IR Level
  *
- * EECS 583 - Advanced Compiler Construction 
+ * EECS 583 - Advanced Compiler Construction
  * Final Project
- * 
+ *
  * Authors: Johnathan Yang and Owen Webb
  * Date: 12/16/2020
- * 
- * Description: The following software implements an LLVM IR pass that ensures 
- * Code Pointer Integrity (CPI) using a methodology similar to the hardware 
+ *
+ * Description: The following software implements an LLVM IR pass that ensures
+ * Code Pointer Integrity (CPI) using a methodology similar to the hardware
  * Pointer Authentication Codes (PACs) implemented in Apple's ARM64e architecture.
- * By enforcing CPI at the IR level, we believe our implementation offers 
- * increased flexibility and security at the cost of some efficiency advantages 
- * when compared to the ARM64e methodology. See our research write-up at the 
+ * By enforcing CPI at the IR level, we believe our implementation offers
+ * increased flexibility and security at the cost of some efficiency advantages
+ * when compared to the ARM64e methodology. See our research write-up at the
  * link below for more information and a detailed security analysis.
- * 
+ *
  * References and further reading:
- *      (1) J. Yang, O. Webb. ARM64e-Inspired Code Pointer Integrity in LLVM IR. 
+ *      (1) J. Yang, O. Webb. ARM64e-Inspired Code Pointer Integrity in LLVM IR.
  *              https://docs.google.com/document/d/18yBso_evxJY6Rr9Wv1-cvj49Eq2qZul38kpD4mtxSB0/edit?usp=sharing
  *      (2) J. McCall, A. Bougacha. ARM64e, An ABI for Pointer Authentication.
  *              https://llvm.org/devmtg/2019-10/slides/McCall-Bougacha-arm64e.pdf
  *      (3) Qualcomm Technologies. Pointer Authentication on ARMv8.3.
  *              https://www.qualcomm.com/media/documents/files/whitepaper-pointer-authentication-on-armv8-3.pdf
- *      (4) M.R. Khandaker, W. Liu, A. Nasar, Z. Wang, J. Yang. Origin-sensitive 
+ *      (4) M.R. Khandaker, W. Liu, A. Nasar, Z. Wang, J. Yang. Origin-sensitive
  *          Control Flow Integrity.
  *              https://www.usenix.org/system/files/sec19-khandaker.pdf
  *      (5) Apple LLVM Project. Pointer Authentication.
- *              https://github.com/apple/llvm-project/blob/a63a81bd9911f87a0b5dcd5bdd7ccdda7124af87/clang/docs/PointerAuthentication.rst  
+ *              https://github.com/apple/llvm-project/blob/a63a81bd9911f87a0b5dcd5bdd7ccdda7124af87/clang/docs/PointerAuthentication.rst
+ *      (6) Securing C++ Virtual Calls from Memory Corruption Attacks
+ *              https://cseweb.ucsd.edu/~lerner/papers/ndss14.pdf
  */
-// Standard Includes
+ // Standard Includes
 #include <string>
 
 // LLVM Includes
@@ -89,9 +91,23 @@ namespace {
         static char ID;
         FINAL() : FunctionPass(ID) {}
 
-        bool runOnFunction(Function& F) override { 
-            if (F.getName() == "main") {
-                sign(*(*F.begin()).begin());
+        bool runOnFunction(Function& F) override {
+            // if (F.getName() == "main") {
+            //     sign(*(*F.begin()).begin());
+            // }
+
+            // insert sign (for return addresses)
+
+            // loop through parameters
+            //      if paramter is pointer to a function
+            //          insert:
+            //              if src in map of signed pointers
+            //                  auth // need to auth and re-sign to ensure code pointer has not changed since last sign
+            //              sign      
+            for (auto arg = F.arg_begin(); arg != F.arg_end(); ++arg) {
+                if (auto* pointer = dyn_cast<Pointer>(arg)) {
+
+                }
             }
 
             errs() << F.getName() << "\n";
@@ -99,24 +115,18 @@ namespace {
                 for (BasicBlock::iterator I = BB.begin(); I != BB.end();) {
                     Instruction& i = *I++;
 
-                    // TODO: How to identify sign locations? 
-                    //      Points-to DFA? 
-                    //      Just sign assignments to pointers to functions?
-                    //      ...
-                    //
-                    // auto load = dyn_cast<LoadInst>(&i);
-                    // if (load) {
-                    //     Type* loadOpType = load->getPointerOperand()->getType();
-                    //     // // if (loadOpType->isFunctionTy()) {
-                    //     // //     errs() << "FunctionType identified\n";
-                    //     // // }
-                    //     // errs() << *loadOpType << "\n";
-                    // }
-                    // for every load pointing to a function
-                    // if load's operand points to a function
-                    //      insert auth
+                    // if this instruction is a store to a variable:
+                    //      get the variable you're storing to
+                    //      get the type of that variable
+                    //      if the type is a pointer to a function:
+                    //          get the source register (RHS)
+                    //          insert:
+                    //              if src in map of signed pointers
+                    //                  auth // need to auth and re-sign to ensure code pointer has not changed since last sign
+                    //              sign
 
                     // Identifies both C++ Virtual Calls and C Function Pointer Calls
+                    // http://lists.llvm.org/pipermail/llvm-dev/2019-April/131888.html << this is a post on accessing the c++ vtable ptr in llvm
                     auto call = dyn_cast<CallInst>(&i);
                     if (call && call->isIndirectCall()) {
                         // this is where we need to insert auths
