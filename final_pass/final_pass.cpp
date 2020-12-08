@@ -92,10 +92,6 @@ namespace {
         FINAL() : FunctionPass(ID) {}
 
         bool runOnFunction(Function& F) override {
-            // if (F.getName() == "main") {
-            //     sign(*(*F.begin()).begin());
-            // }
-
             // insert sign (for return addresses)
 
             // loop through parameters
@@ -104,42 +100,39 @@ namespace {
             //              if src in map of signed pointers
             //                  auth // need to auth and re-sign to ensure code pointer has not changed since last sign
             //              sign      
-            for (auto arg = F.arg_begin(); arg != F.arg_end(); ++arg) {
-                if (auto* pointer = dyn_cast<Pointer>(arg)) {
+            // for (auto arg = F.arg_begin(); arg != F.arg_end(); ++arg) {
+            //     if (auto* pointer = dyn_cast<Pointer>(arg)) {
 
-                }
-            }
+            //     }
+            // }
 
             errs() << F.getName() << "\n";
             for (BasicBlock& BB : F) {
                 for (BasicBlock::iterator I = BB.begin(); I != BB.end();) {
                     Instruction& i = *I++;
+                    
+                    if (StoreInst* store = dyn_cast<StoreInst>(&i)) {
+                        Type* type = store->getPointerOperand()->getType()->getContainedType(0);
+                        bool ptrToFunc = false;
 
-                    // if this instruction is a store to a variable:
-                    //      get the variable you're storing to
-                    //      get the type of that variable
-                    //      if the type is a pointer to a function:
-                    //          get the source register (RHS)
-                    //          insert:
-                    //              if src in map of signed pointers
-                    //                  auth // need to auth and re-sign to ensure code pointer has not changed since last sign
-                    //              sign
+                        if (type->isPointerTy() && type->getContainedType(0)->isFunctionTy()) {
+                            Value* rhs = store->getValueOperand();
+                            ptrToFunc = true;
+                        //          insert:
+                        //              if src in map of signed pointers
+                        //                  auth // need to auth and re-sign to ensure code pointer has not changed since last sign
+                        //              sign
+                        }
 
-                    // Identifies both C++ Virtual Calls and C Function Pointer Calls
-                    // http://lists.llvm.org/pipermail/llvm-dev/2019-April/131888.html << this is a post on accessing the c++ vtable ptr in llvm
-                    auto call = dyn_cast<CallInst>(&i);
-                    if (call && call->isIndirectCall()) {
-                        // this is where we need to insert auths
-                        // sign after all users that write to callInst's ops
-                        errs() << "Indirect CallInst " << i << "\n";
-                    }
-
-                    // Identify Return calls
-                    auto ret = dyn_cast<ReturnInst>(&i);
-                    if (ret) {
-                        // this is where we need to insert auths
-                        // sign return address at start of function
-                        errs() << "ReturnInst " << i << "\n";
+                        errs() << "\tStoreInst: " << store << " to function? " << ptrToFunc << "\n";
+                    } else if (CallInst* call = dyn_cast<CallInst>(&i)) {
+                        if (call && call->isIndirectCall()) {
+                            // insert indirect call auth
+                            errs() << "\tIndirect CallInst: " << call << "\n";
+                        }
+                    } else if (ReturnInst* ret = dyn_cast<ReturnInst>(&i)) {
+                        // insert return auth
+                        errs() << "\tReturnInst: " << ret << "\n";
                     }
                 }
             }
