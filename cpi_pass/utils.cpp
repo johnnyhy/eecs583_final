@@ -14,3 +14,7 @@ void printBufAsHex(uint8_t* data, unsigned len, llvm::raw_ostream &s) {
         ss << std::hex << (int)data[i];
     s << ss.str() << "\n";
 }
+
+bool isPtrToFunc(llvm::Type* t) {
+    return t->isPointerTy() && t->getContainedType(0)->isFunctionTy();
+}

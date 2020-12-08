@@ -40,50 +40,10 @@
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/CallSite.h"
 
-// OpenSSL Includes
-#include "openssl/sha.h"
-#include "openssl/hmac.h"
-#include "openssl/evp.h"
-
 // Custom Includes
 #include "utils.h"
 
-// Options and Config
-const size_t PTR_LEN = 8;                   // in bytes for all
-const size_t KEY_LEN = 32;
-const size_t SIG_LEN = 32;
-const std::string KEY_PATH = "auth.key";
-const uint8_t KEY[KEY_LEN] = { };
-
 using namespace llvm;
-
-// SIGN a raw pointer, producing a signed pointer
-std::string sign(Instruction& i) {
-    (void)i;
-    std::string digest;
-
-    uint8_t k[KEY_LEN] = {};
-    uint8_t ptrval[PTR_LEN] = { 0xff, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef };
-    uint8_t digest1[SIG_LEN] = {};
-
-    // plain 256 hash
-    SHA256(ptrval, PTR_LEN, digest1);
-    printBufAsHex(digest1, SIG_LEN, errs());
-
-    // HMAC 
-    uint8_t* digest2 = HMAC(EVP_sha256(), k, KEY_LEN, ptrval, PTR_LEN, nullptr, nullptr);
-    printBufAsHex(digest2, SIG_LEN, errs());
-
-    // use i.insertAfter() to place sign instructions after i
-    return digest;
-}
-
-// AUTHENTICATE a signed pointer, producing a raw pointer
-std::string auth(Instruction& i) {
-    (void)i;
-    std::string raw_ptr;
-    return raw_ptr;
-}
 
 // LLVM Pass implementation
 namespace {
@@ -92,21 +52,19 @@ namespace {
         cpi() : FunctionPass(ID) {}
 
         bool runOnFunction(Function& F) override {
+            errs() << F.getName() << "\n";
+
             // insert sign (for return addresses)
 
-            // loop through parameters
-            //      if paramter is pointer to a function
+            for (Argument& arg : F.args()) {
+                if (isPtrToFunc(arg.getType())) {
             //          insert:
             //              if src in map of signed pointers
             //                  auth // need to auth and re-sign to ensure code pointer has not changed since last sign
-            //              sign      
-            // for (auto arg = F.arg_begin(); arg != F.arg_end(); ++arg) {
-            //     if (auto* pointer = dyn_cast<Pointer>(arg)) {
-
-            //     }
-            // }
-
-            errs() << F.getName() << "\n";
+            //              sign     
+                }
+            }
+            
             for (BasicBlock& BB : F) {
                 for (BasicBlock::iterator I = BB.begin(); I != BB.end();) {
                     Instruction& i = *I++;
@@ -115,7 +73,7 @@ namespace {
                         Type* type = store->getPointerOperand()->getType()->getContainedType(0);
                         bool ptrToFunc = false;
 
-                        if (type->isPointerTy() && type->getContainedType(0)->isFunctionTy()) {
+                        if (isPtrToFunc(type)) {
                         //    Value* rhs = store->getValueOperand();
                             ptrToFunc = true;
                         //          insert:
@@ -126,7 +84,7 @@ namespace {
 
                         errs() << "\tStoreInst: " << store << " to function? " << ptrToFunc << "\n";
                     } else if (CallInst* call = dyn_cast<CallInst>(&i)) {
-                        if (call && call->isIndirectCall()) {
+                        if (call->isIndirectCall()) {
                             // insert indirect call auth
                             errs() << "\tIndirect CallInst: " << call << "\n";
                         }

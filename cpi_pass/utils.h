@@ -13,5 +13,8 @@
 
 // LLVM Includes
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/IR/Type.h"
 
 void printBufAsHex(uint8_t* data, unsigned len, llvm::raw_ostream &s);
+
+bool isPtrToFunc(llvm::Type* t);

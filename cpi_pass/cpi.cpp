@@ -1,7 +1,19 @@
 #include "cpi.h"
 
-void CPI::sign() const {
+using namespace llvm;
 
+void CPI::sign() const {
+    uint8_t k[KEY_LEN] = {};
+    uint8_t ptrval[PTR_LEN] = { 0xff, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef };
+    uint8_t digest1[SIG_LEN] = {};
+
+    // plain 256 hash
+    SHA256(ptrval, PTR_LEN, digest1);
+    printBufAsHex(digest1, SIG_LEN, errs());
+
+    // HMAC 
+    uint8_t* digest2 = HMAC(EVP_sha256(), k, KEY_LEN, ptrval, PTR_LEN, nullptr, nullptr);
+    printBufAsHex(digest2, SIG_LEN, errs());
 }
 
 void CPI::auth() const {
