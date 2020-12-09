@@ -34,7 +34,7 @@
 
 // LLVM Includes
 #include "llvm/Pass.h"
-#include "llvm/Module.h"
+#include "llvm/IR/Module.h"
 #include "llvm/IR/Function.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/BasicBlock.h"
@@ -56,9 +56,10 @@ namespace {
             for (auto &F : M) {
                 runOnFunction(F);
             }
+	    return false;
         }
 
-        bool runOnFunction(Function& F) override {
+        bool runOnFunction(Function& F) {
             errs() << F.getName() << "\n";
 
             // insert sign (for return addresses)
