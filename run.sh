@@ -24,6 +24,7 @@ chmod +x $fname &&
 
 # cleanup bitcode files
 rm cpi.bc &&
+rm $fname
 rm $fname.bc &&
 rm $fname.opt.bc &&
 rm prog.bc

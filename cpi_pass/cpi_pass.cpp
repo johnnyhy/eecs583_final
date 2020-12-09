@@ -68,9 +68,9 @@ namespace {
         Type* ptrToFunc;
         Type* ptrToPtrToFunc;
 
-        bool runOnModule(Module &M) override {
+        bool runOnModule(Module& M) override {
             logStream.open(logFile);
-            
+
             // lookup __builtin_return_address
             getRetAddr = Intrinsic::getDeclaration(&M, Intrinsic::returnaddress);
 
@@ -79,28 +79,28 @@ namespace {
             ptrToFunc = voidFuncNoArgs->getPointerTo();
             ptrToPtrToFunc = ptrToFunc->getPointerTo();
 
-            ret_sign = M.getOrInsertFunction("_Z8ret_signPh", 
-                                             Type::getVoidTy(M.getContext()), 
-                                             Type::getInt8PtrTy(M.getContext())
-                                            ).getCallee();
+            ret_sign = M.getOrInsertFunction("_Z8ret_signPh",
+                Type::getVoidTy(M.getContext()),
+                Type::getInt8PtrTy(M.getContext())
+            ).getCallee();
             ret_auth = M.getOrInsertFunction("_Z8ret_authPh",
-                                             Type::getVoidTy(M.getContext()),
-                                             Type::getInt8PtrTy(M.getContext())
-                                            ).getCallee();
+                Type::getVoidTy(M.getContext()),
+                Type::getInt8PtrTy(M.getContext())
+            ).getCallee();
             sign = M.getOrInsertFunction("_Z4signPPFvvEPFPvvE",
-                                         Type::getVoidTy(M.getContext()),
-                                         ptrToFunc,
-                                         ptrToPtrToFunc
-                                        ).getCallee();
+                Type::getVoidTy(M.getContext()),
+                ptrToFunc,
+                ptrToPtrToFunc
+            ).getCallee();
             auth = M.getOrInsertFunction("_Z4authPPFvvEPFPvvE",
-                                         Type::getVoidTy(M.getContext()),
-                                         ptrToFunc,
-                                         ptrToPtrToFunc
-                                        ).getCallee();
+                Type::getVoidTy(M.getContext()),
+                ptrToFunc,
+                ptrToPtrToFunc
+            ).getCallee();
 
             // instrument CPI lib calls on every func
             bool modified = false;
-            for (auto &F : M) {
+            for (auto& F : M) {
                 // only if function has body implemented in this module
                 if (F.getInstructionCount()) {
                     modified = true;
@@ -108,7 +108,7 @@ namespace {
                 }
             }
 
-	        return modified;
+            return modified;
         }
 
         bool runOnFunction(Function& F) {
@@ -120,26 +120,10 @@ namespace {
             CallInst* retAddr = builder.CreateCall(getRetAddr, std::vector<Value*>{ builder.getInt32(0) });
             builder.CreateCall(ret_sign, std::vector<Value*>{ retAddr });
 
-            // check function arguments for function pointers that need to be re-signed
-            for (Argument& arg : F.args()) {
-                if (isPtrToFunc(arg.getType())) {
-                    AllocaInst* ptr = builder.CreateAlloca(ptrToFunc, &arg);
-                    ptr->getType()->print(errs());
-                    arg.getType()->print(errs());
-                    errs() << "\n\n";
-                    // logStream << arg.getType() << std::endl;
-                    // builder.CreateCall(sign, std::vector<Value*>{});
-            //          insert:
-            //              if src in map of signed pointers
-            //                  auth // need to auth and re-sign to ensure code pointer has not changed since last sign
-            //              sign     
-                }
-            }
-            
             for (BasicBlock& BB : F) {
                 for (BasicBlock::iterator I = BB.begin(); I != BB.end();) {
                     Instruction& i = *I++;
-                    
+
                     if (StoreInst* store = dyn_cast<StoreInst>(&i)) {
                         Value* lhs = store->getPointerOperand();
                         Type* type = lhs->getType()->getContainedType(0);
@@ -149,12 +133,14 @@ namespace {
                             IRBuilder<> localBuilder(&i);
                             Value* rhs = store->getValueOperand();
 
-                            // TODO: cast both lhs and rhs to void function pointer (and ptr to ptr) taking no args to conform to sign params
-                            localBuilder.CreateCall(sign, std::vector<Value*>{ rhs, lhs });
-                            
+                            Value* castRhs = localBuilder.CreatePointerCast(rhs, ptrToFunc);
+                            Value* castLhs = localBuilder.CreatePointerCast(lhs, ptrToPtrToFunc);
+                            localBuilder.CreateCall(sign, std::vector<Value*>{ castRhs, castLhs });
+
                             logStream << "\tStoreInst to fptr: " << store << "\n";
                         }
-                    } else if (CallInst* call = dyn_cast<CallInst>(&i)) {
+                    }
+                    else if (CallInst* call = dyn_cast<CallInst>(&i)) {
                         if (call->isIndirectCall()) {
                             IRBuilder<> localBuilder(&i);
 
@@ -163,7 +149,8 @@ namespace {
                             // instrument with call to auth, and fptr's as an argument
                             logStream << "\tIndirect CallInst: " << call << "\n";
                         }
-                    } else if (ReturnInst* ret = dyn_cast<ReturnInst>(&i)) {
+                    }
+                    else if (ReturnInst* ret = dyn_cast<ReturnInst>(&i)) {
                         // insert return auth
                         IRBuilder<> localBuilder(&i);
                         retAddr = localBuilder.CreateCall(getRetAddr, std::vector<Value*>{ localBuilder.getInt32(0) });
