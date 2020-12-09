@@ -63,6 +63,11 @@ namespace {
         Value* sign;
         Value* auth;
 
+        // Useful Types
+        Type* voidFuncNoArgs;
+        Type* ptrToFunc;
+        Type* ptrToPtrToFunc;
+
         bool runOnModule(Module &M) override {
             logStream.open(logFile);
             
@@ -70,6 +75,10 @@ namespace {
             getRetAddr = Intrinsic::getDeclaration(&M, Intrinsic::returnaddress);
 
             // lookup CPI lib ret_sign/ret_auth, sign/auth functions
+            voidFuncNoArgs = FunctionType::get(Type::getVoidTy(M.getContext()), false);
+            ptrToFunc = voidFuncNoArgs->getPointerTo();
+            ptrToPtrToFunc = ptrToFunc->getPointerTo();
+
             ret_sign = M.getOrInsertFunction("_Z8ret_signPh", 
                                              Type::getVoidTy(M.getContext()), 
                                              Type::getInt8PtrTy(M.getContext())
@@ -80,13 +89,13 @@ namespace {
                                             ).getCallee();
             sign = M.getOrInsertFunction("_Z4signPPFvvEPFPvvE",
                                          Type::getVoidTy(M.getContext()),
-                                         FunctionType::get(Type::getVoidTy(M.getContext()), false)->getPointerTo(),
-                                         FunctionType::get(Type::getVoidTy(M.getContext()), false)->getPointerTo()->getPointerTo()
+                                         ptrToFunc,
+                                         ptrToPtrToFunc
                                         ).getCallee();
             auth = M.getOrInsertFunction("_Z4authPPFvvEPFPvvE",
                                          Type::getVoidTy(M.getContext()),
-                                         FunctionType::get(Type::getVoidTy(M.getContext()), false)->getPointerTo(),
-                                         FunctionType::get(Type::getVoidTy(M.getContext()), false)->getPointerTo()->getPointerTo()
+                                         ptrToFunc,
+                                         ptrToPtrToFunc
                                         ).getCallee();
 
             // instrument CPI lib calls on every func
@@ -114,8 +123,12 @@ namespace {
             // check function arguments for function pointers that need to be re-signed
             for (Argument& arg : F.args()) {
                 if (isPtrToFunc(arg.getType())) {
-                //     logStream << arg.getType() << std::endl;
-                    //builder.CreateCall(sign, std::vector<Value*>{});
+                    AllocaInst* ptr = builder.CreateAlloca(ptrToFunc, &arg);
+                    ptr->getType()->print(errs());
+                    arg.getType()->print(errs());
+                    errs() << "\n\n";
+                    // logStream << arg.getType() << std::endl;
+                    // builder.CreateCall(sign, std::vector<Value*>{});
             //          insert:
             //              if src in map of signed pointers
             //                  auth // need to auth and re-sign to ensure code pointer has not changed since last sign
