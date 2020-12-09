@@ -58,8 +58,12 @@ namespace {
             }
         }
 
-        bool runOnFunction(Function& F) override {
+        bool runOnFunction(Function& F) {
             errs() << F.getName() << "\n";
+            if (F.getInstructionCount() == 0) {
+                errs() << "\tnot defined within module\n";
+                return false;
+            }
 
             // insert sign (for return addresses)
 
