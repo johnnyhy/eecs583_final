@@ -7,8 +7,8 @@
 #include "openssl/evp.h"
 
 void ret_sign(uint8_t* retPtrVal);
-void sign(uint8_t* fptrAddr, uint8_t* fptrVal);
-void auth(uint8_t* fptrAddr, uint8_t* fptrVal);
+void sign(void(**fptrAddr)(), void(*fptrVal()));
+void auth(void(**fptrAddr)(), void(*fptrVal()));
 
 struct Data
 {

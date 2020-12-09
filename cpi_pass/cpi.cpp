@@ -10,7 +10,7 @@ void ret_auth(uint8_t* retPtrVal) {
     (void)retPtrVal;
 }
 
-void sign(uint8_t* fptrAddr, uint8_t* fptrVal) {
+void sign(void(**fptrAddr)(), void(*fptrVal())) {
     // Data &data = getData();
     // uint8_t k[KEY_LEN] = {};
     // uint8_t ptrval[PTR_LEN] = { 0xff, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef };
@@ -28,7 +28,7 @@ void sign(uint8_t* fptrAddr, uint8_t* fptrVal) {
     (void)fptrVal;
 }
 
-void auth(uint8_t* fptrAddr, uint8_t* fptrVal) {
+void auth(void(**fptrAddr)(), void(*fptrVal())) {
     // Data &data = getData();
     // data.
     (void)fptrAddr;
