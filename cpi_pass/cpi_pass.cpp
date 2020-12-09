@@ -34,6 +34,7 @@
 
 // LLVM Includes
 #include "llvm/Pass.h"
+#include "llvm/Module.h"
 #include "llvm/IR/Function.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/BasicBlock.h"
@@ -47,9 +48,15 @@ using namespace llvm;
 
 // LLVM Pass implementation
 namespace {
-    struct cpi : public FunctionPass {
+    struct cpi : public ModulePass {
         static char ID;
-        cpi() : FunctionPass(ID) {}
+        cpi() : ModulePass(ID) {}
+
+        bool runOnModule(Module &M) override {
+            for (auto &F : M) {
+                runOnFunction(F);
+            }
+        }
 
         bool runOnFunction(Function& F) override {
             errs() << F.getName() << "\n";
