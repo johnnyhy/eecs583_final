@@ -54,50 +54,60 @@ namespace {
         static char ID;
         cpi() : ModulePass(ID) {}
 
+        // __builtin_return_address
+        Function* getRetAddr;
+
+        // CPI lib functions
+        Value* ret_sign;
+        Value* ret_auth;
         Value* sign;
         Value* auth;
 
-        Function* getAddrOfRetAddr;
-        Function* getRetAddr;
-
         bool runOnModule(Module &M) override {
-            getAddrOfRetAddr = Intrinsic::getDeclaration(&M, Intrinsic::frameaddress);//, std::vector<Type*>{ Type::getVoidTy(M.getContext()) });
-            getRetAddr = Intrinsic::getDeclaration(&M, Intrinsic::returnaddress);//, std::vector<Type*>{ Type::getInt32Ty(M.getContext()) });
-
-            sign = M.getOrInsertFunction("sign", Type::getVoidTy(M.getContext()), Type::getInt8PtrTy(M.getContext()), Type::getInt8PtrTy(M.getContext())).getCallee();
-            auth = M.getOrInsertFunction("auth", Type::getVoidTy(M.getContext()), Type::getInt8PtrTy(M.getContext()), Type::getInt8PtrTy(M.getContext())).getCallee();
+            logStream.open(logFile);
             
+            // lookup __builtin_return_address
+            getRetAddr = Intrinsic::getDeclaration(&M, Intrinsic::returnaddress);
+
+            // lookup CPI lib ret_sign/ret_auth, sign/auth functions
+            ret_sign = M.getOrInsertFunction("_Z8ret_signPh", 
+                                             Type::getVoidTy(M.getContext()), 
+                                             Type::getInt8PtrTy(M.getContext())
+                                            ).getCallee();
+            ret_auth = M.getOrInsertFunction("_Z8ret_authPh",
+                                             Type::getVoidTy(M.getContext()),
+                                             Type::getInt8PtrTy(M.getContext())
+                                            ).getCallee();
+            sign = M.getOrInsertFunction("_Z4signPhS_",
+                                         Type::getVoidTy(M.getContext()),
+                                         Type::getInt8PtrTy(M.getContext()),
+                                         Type::getInt8PtrTy(M.getContext())
+                                        ).getCallee();
+            auth = M.getOrInsertFunction("_Z4authPhS_",
+                                         Type::getVoidTy(M.getContext()),
+                                         Type::getInt8PtrTy(M.getContext()),
+                                         Type::getInt8PtrTy(M.getContext())
+                                        ).getCallee();
+            
+            // instrument CPI lib calls on every func
+            bool modified = false;
             for (auto &F : M) {
-                runOnFunction(F);
+                if (F.getInstructionCount()) { // only if function has body implemented in this module
+                    modified = true;
+                    runOnFunction(F);
+                }
             }
 
-	        return false;
+	        return modified;
         }
 
         bool runOnFunction(Function& F) {
-            errs() << F.getName() << "\n";
-            if (F.getInstructionCount() == 0) {
-                errs() << "\tnot defined within module\n";
-                return false;
-            }
+            logStream << std::string(F.getName()) << "\n";
 
-            if (F.getName() == "_Z7wrapperiPPc") {
             Instruction& first = *(F.begin())->begin();
             IRBuilder<> builder(&first);
-            errs() << "here\n";
-            CallInst* addrOfRetAddr = builder.CreateCall(getAddrOfRetAddr);
-            errs() << "here\n";
             CallInst* retAddr = builder.CreateCall(getRetAddr, std::vector<Value*>{ builder.getInt32(0) });
-            errs() << "here\n";
-            sign->print(errs());
-            errs() << "\n";
-            getAddrOfRetAddr->print(errs());
-            errs() << "\n\n";
-            retAddr->print(errs());
-            errs() << "\n";
-            builder.CreateCall(sign, std::vector<Value*>{addrOfRetAddr, retAddr});
-            errs() << "here\n";
-            }
+            builder.CreateCall(ret_sign, std::vector<Value*>{ retAddr });
 
             for (Argument& arg : F.args()) {
                 if (isPtrToFunc(arg.getType())) {
@@ -126,17 +136,20 @@ namespace {
                         //              sign
                         }
 
-                        errs() << "\tStoreInst: " << store << " to function? " << ptrToFunc << "\n";
+                        logStream << "\tStoreInst: " << store << " to function? " << ptrToFunc << "\n";
                     } else if (CallInst* call = dyn_cast<CallInst>(&i)) {
                         if (call->isIndirectCall()) {
                             // insert indirect call auth
                             // generate address of function pointer
                             // instrument with call to auth, and fptr's as an argument
-                            errs() << "\tIndirect CallInst: " << call << "\n";
+                            logStream << "\tIndirect CallInst: " << call << "\n";
                         }
                     } else if (ReturnInst* ret = dyn_cast<ReturnInst>(&i)) {
                         // insert return auth
-                        errs() << "\tReturnInst: " << ret << "\n";
+                        IRBuilder<> builder2(&i);
+                        retAddr = builder2.CreateCall(getRetAddr, std::vector<Value*>{ builder.getInt32(0) });
+                        builder2.CreateCall(ret_auth, std::vector<Value*>{ retAddr });
+                        logStream << "\tReturnInst: " << ret << "\n";
                     }
                 }
             }

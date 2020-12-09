@@ -2,3 +2,4 @@ build/*
 *.bc
 .vscode/*
 *.ll
+cpi.log
