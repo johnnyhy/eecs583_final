@@ -1,6 +1,14 @@
 #include "cpi.h"
 
-using namespace llvm;
+void ret_sign(uint8_t* retPtrVal) {
+    printf("sign'd yo return bitch\n");
+    (void)retPtrVal;
+}
+
+void ret_auth(uint8_t* retPtrVal) {
+    printf("auth'd you return ass\n");
+    (void)retPtrVal;
+}
 
 void sign(uint8_t* fptrAddr, uint8_t* fptrVal) {
     // Data &data = getData();
