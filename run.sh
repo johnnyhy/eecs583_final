@@ -18,9 +18,9 @@ opt -load build/cpi_pass/CPI.so -cpi < $fname.bc > $fname.opt.bc 2> /dev/null &&
 llvm-link cpi.bc $fname.opt.bc -o prog.bc &&
 
 # compile and run prog
-clang -lstdc++ prog.bc $arg -o fname &&
+clang -lstdc++ prog.bc -o fname &&
 chmod +x fname &&
-./fname
+./fname $arg
 
 # cleanup bitcode files
 rm cpi.bc &&
