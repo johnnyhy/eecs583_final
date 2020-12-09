@@ -40,9 +40,11 @@
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Instruction.h"
 #include "llvm/IR/CallSite.h"
+#include "llvm/IR/IRBuilder.h"
 
 // Custom Includes
 #include "utils.h"
+#include "cpi.h"
 
 using namespace llvm;
 
@@ -52,7 +54,19 @@ namespace {
         static char ID;
         cpi() : ModulePass(ID) {}
 
+        Function* sign;
+        Function* auth;
+
+        Function* getAddrOfRetAddr;
+        Function* getRetAddr;
+
         bool runOnModule(Module &M) override {
+            getAddrOfRetAddr = Intrinsic::getDeclaration(&M, Intrinsic::addressofreturnaddress);
+            getRetAddr = Intrinsic::getDeclaration(&M, Intrinsic::returnaddress);
+
+            sign = cast<Function>(M.getOrInsertFunction("sign", Type::getVoidTy(M.getContext()), Type::getInt8PtrTy(M.getContext()), Type::getInt8Ptr()));
+            auth = cast<Function>(M.getOrInsertFunction("auth", Type::getVoidTy(M.getContext()), Type::getInt8PtrTy(M.getContext()), Type::getInt8Ptr()));
+            
             for (auto &F : M) {
                 runOnFunction(F);
             }
@@ -66,7 +80,12 @@ namespace {
                 return false;
             }
 
+            Instruction& first = *(*F.begin())->begin();
+
             // insert sign (for return addresses)
+            CallInst* addrOfRetAddr = CallInst::Create(getAddrOfRetAddr, std::vector<Value*>(), Twine("addressofreturnaddress"), (Instruction *)&first);
+            CallInst* retAddr = CallInst::Create(getRetAddr, std::vector<Value*>(), Twine("returnaddress"), (Instruction *)&first);
+            CallInst* retAddr = CallInst::Create(sign, std::vector<Value*>{addrOfRetAddr, retAddr}, Twine("sign"), (Instruction *)&first);
 
             for (Argument& arg : F.args()) {
                 if (isPtrToFunc(arg.getType())) {
@@ -86,8 +105,10 @@ namespace {
                         bool ptrToFunc = false;
 
                         if (isPtrToFunc(type)) {
-                        //    Value* rhs = store->getValueOperand();
+                            Value* rhs = store->getValueOperand();
                             ptrToFunc = true;
+                            CallInst::Create(Hook, )
+                            // sign(addressOfFptr, fptrValue)
                         //          insert:
                         //              if src in map of signed pointers
                         //                  auth // need to auth and re-sign to ensure code pointer has not changed since last sign
@@ -98,6 +119,8 @@ namespace {
                     } else if (CallInst* call = dyn_cast<CallInst>(&i)) {
                         if (call->isIndirectCall()) {
                             // insert indirect call auth
+                            // generate address of function pointer
+                            // instrument with call to auth, and fptr's as an argument
                             errs() << "\tIndirect CallInst: " << call << "\n";
                         }
                     } else if (ReturnInst* ret = dyn_cast<ReturnInst>(&i)) {
