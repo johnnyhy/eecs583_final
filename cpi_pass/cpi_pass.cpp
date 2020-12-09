@@ -89,13 +89,13 @@ namespace {
             ).getCallee();
             sign = M.getOrInsertFunction("_Z4signPPFvvEPFPvvE",
                 Type::getVoidTy(M.getContext()),
-                ptrToFunc,
-                ptrToPtrToFunc
+                ptrToPtrToFunc,
+                ptrToFunc
             ).getCallee();
             auth = M.getOrInsertFunction("_Z4authPPFvvEPFPvvE",
                 Type::getVoidTy(M.getContext()),
-                ptrToFunc,
-                ptrToPtrToFunc
+                ptrToPtrToFunc,
+                ptrToFunc
             ).getCallee();
 
             // instrument CPI lib calls on every func
@@ -107,11 +107,10 @@ namespace {
                     runOnFunction(F);
                 }
             }
-
             return modified;
         }
 
-        bool runOnFunction(Function& F) {
+        void runOnFunction(Function& F) {
             logStream << std::string(F.getName()) << "\n";
 
             // sign return address on entry
@@ -135,33 +134,31 @@ namespace {
 
                             Value* castRhs = localBuilder.CreatePointerCast(rhs, ptrToFunc);
                             Value* castLhs = localBuilder.CreatePointerCast(lhs, ptrToPtrToFunc);
-                            localBuilder.CreateCall(sign, std::vector<Value*>{ castRhs, castLhs });
-
-                            logStream << "\tStoreInst to fptr: " << store << "\n";
+                            localBuilder.CreateCall(sign, std::vector<Value*>{ castLhs, castRhs });
                         }
                     }
                     else if (CallInst* call = dyn_cast<CallInst>(&i)) {
                         if (call->isIndirectCall()) {
                             IRBuilder<> localBuilder(&i);
 
-                            // insert indirect call auth
-                            // generate address of function pointer
-                            // instrument with call to auth, and fptr's as an argument
-                            logStream << "\tIndirect CallInst: " << call << "\n";
+                            Value* fptr = call->getCalledOperand();
+                            LoadInst* def = dyn_cast<LoadInst>(fptr);
+                            Value* ptrToFptr = def->getPointerOperand();
+
+                            Value* castFptr = localBuilder.CreatePointerCast(fptr, ptrToFunc);
+                            Value* castPtrToFptr = localBuilder.CreatePointerCast(ptrToFptr, ptrToPtrToFunc);
+
+                            localBuilder.CreateCall(auth, std::vector<Value*>{ castPtrToFptr, castFptr });
                         }
                     }
-                    else if (ReturnInst* ret = dyn_cast<ReturnInst>(&i)) {
+                    else if (dyn_cast<ReturnInst>(&i)) {
                         // insert return auth
                         IRBuilder<> localBuilder(&i);
                         retAddr = localBuilder.CreateCall(getRetAddr, std::vector<Value*>{ localBuilder.getInt32(0) });
                         localBuilder.CreateCall(ret_auth, std::vector<Value*>{ retAddr });
-
-                        // log
-                        logStream << "\tReturnInst: " << ret << "\n";
                     }
                 }
             }
-            return false;
         }
     };
 }
