@@ -2,16 +2,15 @@
 #include <unordered_map>
 
 // OpenSSL Includes
-#include "openssl/sha.h"
-#include "openssl/hmac.h"
-#include "openssl/evp.h"
+// #include "openssl/sha.h"
+// #include "openssl/hmac.h"
+// #include "openssl/evp.h"
 
 // Custom includes
 #include "utils.h"
 
-void sign(uint8_t* fptrAddr, uint8_t* fptrVal) const;
-void auth(uint8_t* fptrAddr, uint8_t* fptrVal) const;
-Data &getData();
+void sign(uint8_t* fptrAddr, uint8_t* fptrVal);
+void auth(uint8_t* fptrAddr, uint8_t* fptrVal);
 
 struct Data
 {
@@ -23,3 +22,5 @@ public:
     static const size_t SIG_LEN = 32;
     const uint8_t KEY[KEY_LEN] = { };
 };
+
+Data &getData();

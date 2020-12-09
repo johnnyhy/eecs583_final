@@ -54,23 +54,24 @@ namespace {
         static char ID;
         cpi() : ModulePass(ID) {}
 
-        Function* sign;
-        Function* auth;
+        Value* sign;
+        Value* auth;
 
         Function* getAddrOfRetAddr;
         Function* getRetAddr;
 
         bool runOnModule(Module &M) override {
-            getAddrOfRetAddr = Intrinsic::getDeclaration(&M, Intrinsic::addressofreturnaddress);
-            getRetAddr = Intrinsic::getDeclaration(&M, Intrinsic::returnaddress);
+            getAddrOfRetAddr = Intrinsic::getDeclaration(&M, Intrinsic::frameaddress);//, std::vector<Type*>{ Type::getVoidTy(M.getContext()) });
+            getRetAddr = Intrinsic::getDeclaration(&M, Intrinsic::returnaddress);//, std::vector<Type*>{ Type::getInt32Ty(M.getContext()) });
 
-            sign = cast<Function>(M.getOrInsertFunction("sign", Type::getVoidTy(M.getContext()), Type::getInt8PtrTy(M.getContext()), Type::getInt8Ptr()));
-            auth = cast<Function>(M.getOrInsertFunction("auth", Type::getVoidTy(M.getContext()), Type::getInt8PtrTy(M.getContext()), Type::getInt8Ptr()));
+            sign = M.getOrInsertFunction("sign", Type::getVoidTy(M.getContext()), Type::getInt8PtrTy(M.getContext()), Type::getInt8PtrTy(M.getContext())).getCallee();
+            auth = M.getOrInsertFunction("auth", Type::getVoidTy(M.getContext()), Type::getInt8PtrTy(M.getContext()), Type::getInt8PtrTy(M.getContext())).getCallee();
             
             for (auto &F : M) {
                 runOnFunction(F);
             }
-	    return false;
+
+	        return false;
         }
 
         bool runOnFunction(Function& F) {
@@ -80,12 +81,23 @@ namespace {
                 return false;
             }
 
-            Instruction& first = *(*F.begin())->begin();
-
-            // insert sign (for return addresses)
-            CallInst* addrOfRetAddr = CallInst::Create(getAddrOfRetAddr, std::vector<Value*>(), Twine("addressofreturnaddress"), (Instruction *)&first);
-            CallInst* retAddr = CallInst::Create(getRetAddr, std::vector<Value*>(), Twine("returnaddress"), (Instruction *)&first);
-            CallInst* retAddr = CallInst::Create(sign, std::vector<Value*>{addrOfRetAddr, retAddr}, Twine("sign"), (Instruction *)&first);
+            if (F.getName() == "_Z7wrapperiPPc") {
+            Instruction& first = *(F.begin())->begin();
+            IRBuilder<> builder(&first);
+            errs() << "here\n";
+            CallInst* addrOfRetAddr = builder.CreateCall(getAddrOfRetAddr);
+            errs() << "here\n";
+            CallInst* retAddr = builder.CreateCall(getRetAddr, std::vector<Value*>{ builder.getInt32(0) });
+            errs() << "here\n";
+            sign->print(errs());
+            errs() << "\n";
+            getAddrOfRetAddr->print(errs());
+            errs() << "\n\n";
+            retAddr->print(errs());
+            errs() << "\n";
+            builder.CreateCall(sign, std::vector<Value*>{addrOfRetAddr, retAddr});
+            errs() << "here\n";
+            }
 
             for (Argument& arg : F.args()) {
                 if (isPtrToFunc(arg.getType())) {
@@ -105,9 +117,8 @@ namespace {
                         bool ptrToFunc = false;
 
                         if (isPtrToFunc(type)) {
-                            Value* rhs = store->getValueOperand();
+                            // Value* rhs = store->getValueOperand();
                             ptrToFunc = true;
-                            CallInst::Create(Hook, )
                             // sign(addressOfFptr, fptrValue)
                         //          insert:
                         //              if src in map of signed pointers

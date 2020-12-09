@@ -2,7 +2,7 @@
 
 using namespace llvm;
 
-void sign(uint8_t* fptrAddr, uint8_t* fptrVal) const {
+void sign(uint8_t* fptrAddr, uint8_t* fptrVal) {
     // Data &data = getData();
     // uint8_t k[KEY_LEN] = {};
     // uint8_t ptrval[PTR_LEN] = { 0xff, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef };
@@ -16,11 +16,15 @@ void sign(uint8_t* fptrAddr, uint8_t* fptrVal) const {
     // uint8_t* digest2 = HMAC(EVP_sha256(), k, KEY_LEN, ptrval, PTR_LEN, nullptr, nullptr);
     // printBufAsHex(digest2, SIG_LEN, errs());
     printf("sign'd yo bitch\n");
+    (void)fptrAddr;
+    (void)fptrVal;
 }
 
-void auth(uint8_t* fptrAddr, uint8_t* fptrVal) const {
+void auth(uint8_t* fptrAddr, uint8_t* fptrVal) {
     // Data &data = getData();
     // data.
+    (void)fptrAddr;
+    (void)fptrVal;
 }
 
 Data& getData() {
