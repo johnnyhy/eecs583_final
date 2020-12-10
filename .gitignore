@@ -4,3 +4,5 @@ build/*
 *.ll
 cpi.log
 *.demo
+*.insecure*
+*.cpilib*

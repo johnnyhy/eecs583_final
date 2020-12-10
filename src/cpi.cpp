@@ -10,14 +10,13 @@ using namespace std;
 void ret_sign(uint8_t* retPtrVal) {
     Data& data = getData();
 
-    vector<uint8_t> buf(data.KEY_LEN + data.PTR_LEN, 0);
 
-    memcpy(buf.data(), data.KEY.data(), data.KEY_LEN);
-    memcpy(buf.data() + data.KEY_LEN, &retPtrVal, data.PTR_LEN);
+    memcpy(data.BUF.data(), data.KEY.data(), data.KEY_LEN);
+    memcpy(data.BUF.data() + data.KEY_LEN, &retPtrVal, data.PTR_LEN);
 
-    logStream() << "Inside ret_sign: 0x" << bufAsHex(buf.data() + data.KEY_LEN, buf.size() - data.KEY_LEN) << std::endl;
+    logStream() << "Inside ret_sign: 0x" << bufAsHex(data.BUF.data() + data.KEY_LEN, data.BUF.size() - data.KEY_LEN) << std::endl;
 
-    SHA256(buf.data(), sizeof(buf), data.DIGEST.data());
+    SHA256(data.BUF.data(), data.BUF.size(), data.DIGEST.data());
 
     data.retSignatures.push_front(data.DIGEST);
 }
@@ -25,14 +24,13 @@ void ret_sign(uint8_t* retPtrVal) {
 void ret_auth(uint8_t* retPtrVal) {
     Data& data = getData();
 
-    vector<uint8_t> buf(data.KEY_LEN + data.PTR_LEN, 0);
 
-    memcpy(buf.data(), data.KEY.data(), data.KEY_LEN);
-    memcpy(buf.data() + data.KEY_LEN, &retPtrVal, data.PTR_LEN);
+    memcpy(data.BUF.data(), data.KEY.data(), data.KEY_LEN);
+    memcpy(data.BUF.data() + data.KEY_LEN, &retPtrVal, data.PTR_LEN);
 
-    logStream() << "Inside ret_auth: 0x" << bufAsHex(buf.data() + data.KEY_LEN, buf.size() - data.KEY_LEN) << std::endl;
+    logStream() << "Inside ret_auth: 0x" << bufAsHex(data.BUF.data() + data.KEY_LEN, data.BUF.size() - data.KEY_LEN) << std::endl;
 
-    SHA256(buf.data(), sizeof(buf), data.DIGEST.data());
+    SHA256(data.BUF.data(), data.BUF.size(), data.DIGEST.data());
 
     if (data.DIGEST != data.retSignatures.front()) {
         fprintf(stderr, "return address overwritten");
@@ -49,14 +47,12 @@ void sign(void(**fptrAddr)(), void(*fptrVal)()) {
         auth(fptrAddr, *fptrAddr);
     }
 
-    vector<uint8_t> buf(data.KEY_LEN + data.PTR_LEN, 0);
+    memcpy(data.BUF.data(), data.KEY.data(), data.KEY_LEN);
+    memcpy(data.BUF.data() + data.KEY_LEN, &fptrVal, data.PTR_LEN);
 
-    memcpy(buf.data(), data.KEY.data(), data.KEY_LEN);
-    memcpy(buf.data() + data.KEY_LEN, &fptrVal, data.PTR_LEN);
+    SHA256(data.BUF.data(), data.BUF.size(), data.DIGEST.data());
 
-    SHA256(buf.data(), sizeof(buf), data.DIGEST.data());
-
-    logStream() << "Inside sign: 0x" << bufAsHex(buf.data() + data.KEY_LEN, buf.size() - data.KEY_LEN) << fptrVal << std::endl;
+    logStream() << "Inside sign: 0x" << bufAsHex(data.BUF.data() + data.KEY_LEN, data.BUF.size() - data.KEY_LEN) << fptrVal << std::endl;
 
     data.signatures[fptrAddr] = data.DIGEST;
 
@@ -72,14 +68,12 @@ void auth(void(**fptrAddr)(), void(*fptrVal)()) {
 
     assert(data.signatures.find(fptrAddr) != data.signatures.end());
 
-    vector<uint8_t> buf(data.KEY_LEN + data.PTR_LEN, 0);
+    memcpy(data.BUF.data(), data.KEY.data(), data.KEY_LEN);
+    memcpy(data.BUF.data() + data.KEY_LEN, &fptrVal, data.PTR_LEN);
 
-    memcpy(buf.data(), data.KEY.data(), data.KEY_LEN);
-    memcpy(buf.data() + data.KEY_LEN, &fptrVal, data.PTR_LEN);
+    logStream() << "Inside auth: 0x" << bufAsHex(data.BUF.data() + data.KEY_LEN, data.BUF.size() - data.KEY_LEN) << std::endl;
 
-    logStream() << "Inside auth: 0x" << bufAsHex(buf.data() + data.KEY_LEN, buf.size() - data.KEY_LEN) << std::endl;
-
-    SHA256(buf.data(), sizeof(buf), data.DIGEST.data());
+    SHA256(data.BUF.data(), data.BUF.size(), data.DIGEST.data());
 
     if (data.signatures[fptrAddr] != data.DIGEST) {
         fprintf(stderr, "stack smashing detected");
@@ -87,7 +81,7 @@ void auth(void(**fptrAddr)(), void(*fptrVal)()) {
     }
 }
 
-Data::Data() : DATA(vector<uint8_t>(PTR_LEN + KEY_LEN, 0)),
+Data::Data() : BUF(vector<uint8_t>(KEY_LEN + PTR_LEN, 0)),
 KEY(vector<uint8_t>(KEY_LEN, 0)),
 DIGEST(vector<uint8_t>(32, 0)) {
     srand(time(0));
