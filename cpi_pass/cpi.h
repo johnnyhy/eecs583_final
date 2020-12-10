@@ -1,5 +1,8 @@
 // Standard Includes
 #include <unordered_map>
+#include <iostream>
+#include <fstream>
+#include <string>
 
 // OpenSSL Includes
 #include "openssl/sha.h"
@@ -22,4 +25,6 @@ public:
 };
 
 Data &getData();
+
+std::ofstream& logStream();
 

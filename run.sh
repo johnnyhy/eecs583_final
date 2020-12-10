@@ -8,8 +8,8 @@ fname=$1
 arg=$2
 
 # compile CPI lib to LLVM bitcode, compile prog to LLVM bitcode
-clang -std=c++11 -stdlib=libc++ -emit-llvm cpi_pass/cpi.cpp -c -o cpi.bc &&
-clang -std=c++11 -stdlib=libc++ -emit-llvm demos/$fname.cpp -c -o $fname.bc &&
+clang++ -emit-llvm cpi_pass/cpi.cpp -c -o cpi.bc &&
+clang++ -emit-llvm demos/$fname.cpp -c -o $fname.bc &&
 
 # run CPI pass on prog (inserts calls to CPI lib)
 opt -load build/cpi_pass/CPI.so -cpi < $fname.bc > $fname.opt.bc &&
@@ -18,7 +18,7 @@ opt -load build/cpi_pass/CPI.so -cpi < $fname.bc > $fname.opt.bc &&
 llvm-link cpi.bc $fname.opt.bc -o prog.bc &&
 
 # compile and run prog
-clang -lstdc++ prog.bc -o $fname &&
+clang++ prog.bc -o $fname &&
 chmod +x $fname &&
 ./$fname $arg
 
