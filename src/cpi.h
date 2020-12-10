@@ -13,8 +13,8 @@
 #include "openssl/evp.h"
 
 void ret_sign(uint8_t* retPtrVal);
-void sign(void(**fptrAddr)(), void(*fptrVal()));
-void auth(void(**fptrAddr)(), void(*fptrVal()));
+void sign(void(**fptrAddr)(), void(*fptrVal)());
+void auth(void(**fptrAddr)(), void(*fptrVal)());
 
 class Data {
 public:

@@ -84,12 +84,12 @@ namespace {
                 Type::getVoidTy(M.getContext()),
                 Type::getInt8PtrTy(M.getContext())
             ).getCallee();
-            sign = M.getOrInsertFunction("_Z4signPPFvvEPFPvvE",
+            sign = M.getOrInsertFunction("_Z4signPPFvvES0_",
                 Type::getVoidTy(M.getContext()),
                 ptrToPtrToFunc,
                 ptrToFunc
             ).getCallee();
-            auth = M.getOrInsertFunction("_Z4authPPFvvEPFPvvE",
+            auth = M.getOrInsertFunction("_Z4authPPFvvES0_",
                 Type::getVoidTy(M.getContext()),
                 ptrToPtrToFunc,
                 ptrToFunc
