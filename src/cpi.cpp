@@ -7,10 +7,7 @@
 
 using namespace std;
 
-
-
 void ret_sign(uint8_t* retPtrVal) {
-    logStream() << "Inside ret_sign 0x" << hex << retPtrVal << std::endl;
     Data& data = getData();
 
     vector<uint8_t> buf(data.KEY_LEN + data.PTR_LEN, 0);
@@ -18,18 +15,22 @@ void ret_sign(uint8_t* retPtrVal) {
     memcpy(buf.data(), data.KEY.data(), data.KEY_LEN);
     memcpy(buf.data() + data.KEY_LEN, &retPtrVal, data.PTR_LEN);
 
+    logStream() << "Inside ret_sign: 0x" << bufAsHex(buf.data() + data.KEY_LEN, buf.size() - data.KEY_LEN) << std::endl;
+
     SHA256(buf.data(), sizeof(buf), data.DIGEST.data());
+
     data.retSignatures.push_front(data.DIGEST);
 }
 
 void ret_auth(uint8_t* retPtrVal) {
-    logStream() << "Inside ret_auth 0x" << hex << retPtrVal << std::endl;
     Data& data = getData();
 
     vector<uint8_t> buf(data.KEY_LEN + data.PTR_LEN, 0);
 
     memcpy(buf.data(), data.KEY.data(), data.KEY_LEN);
     memcpy(buf.data() + data.KEY_LEN, &retPtrVal, data.PTR_LEN);
+
+    logStream() << "Inside ret_auth: 0x" << bufAsHex(buf.data() + data.KEY_LEN, buf.size() - data.KEY_LEN) << std::endl;
 
     SHA256(buf.data(), sizeof(buf), data.DIGEST.data());
 
@@ -40,11 +41,12 @@ void ret_auth(uint8_t* retPtrVal) {
     data.retSignatures.pop_front();
 }
 
-void sign(void(**fptrAddr)(), void(*fptrVal())) {
+void sign(void(**fptrAddr)(), void(*fptrVal)()) {
+
     Data& data = getData();
 
     if (data.signatures.find(fptrAddr) != data.signatures.end()) {
-        auth(fptrAddr, fptrVal);
+        auth(fptrAddr, *fptrAddr);
     }
 
     vector<uint8_t> buf(data.KEY_LEN + data.PTR_LEN, 0);
@@ -54,18 +56,18 @@ void sign(void(**fptrAddr)(), void(*fptrVal())) {
 
     SHA256(buf.data(), sizeof(buf), data.DIGEST.data());
 
+    logStream() << "Inside sign: 0x" << bufAsHex(buf.data() + data.KEY_LEN, buf.size() - data.KEY_LEN) << fptrVal << std::endl;
+
     data.signatures[fptrAddr] = data.DIGEST;
 
     // // HMAC 
     // uint8_t* digest2 = HMAC(EVP_sha256(), k, KEY_LEN, ptrval, PTR_LEN, nullptr, nullptr);
     // printBufAsHex(digest2, SIG_LEN, errs());
-    logStream() << "Inside sign 0x" << hex << fptrVal << std::endl;
     (void)fptrAddr;
     (void)fptrVal;
 }
 
-void auth(void(**fptrAddr)(), void(*fptrVal())) {
-    logStream() << "Inside auth 0x" << hex << fptrVal << std::endl;
+void auth(void(**fptrAddr)(), void(*fptrVal)()) {
     Data& data = getData();
 
     assert(data.signatures.find(fptrAddr) != data.signatures.end());
@@ -74,6 +76,8 @@ void auth(void(**fptrAddr)(), void(*fptrVal())) {
 
     memcpy(buf.data(), data.KEY.data(), data.KEY_LEN);
     memcpy(buf.data() + data.KEY_LEN, &fptrVal, data.PTR_LEN);
+
+    logStream() << "Inside auth: 0x" << bufAsHex(buf.data() + data.KEY_LEN, buf.size() - data.KEY_LEN) << std::endl;
 
     SHA256(buf.data(), sizeof(buf), data.DIGEST.data());
 
