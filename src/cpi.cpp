@@ -103,3 +103,10 @@ std::ofstream& logStream() {
         s.open("cpi.log");
     return s;
 }
+
+std::string bufAsHex(uint8_t* data, unsigned len) {
+    std::stringstream ss;
+    for (unsigned i = 0; i < len; ++i)
+        ss << std::hex << (int)data[i];
+    return ss.str();
+}

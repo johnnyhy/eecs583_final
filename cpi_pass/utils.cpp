@@ -8,13 +8,6 @@
  */
 #include "utils.h"
 
-void printBufAsHex(uint8_t* data, unsigned len, llvm::raw_ostream &s) {
-    std::stringstream ss;
-    for (unsigned i = 0; i < len; ++i)
-        ss << std::hex << (int)data[i];
-    s << ss.str() << "\n";
-}
-
 bool isPtrToFunc(llvm::Type* t) {
     return t->isPointerTy() && t->getContainedType(0)->isFunctionTy();
 }

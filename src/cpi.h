@@ -5,6 +5,7 @@
 #include <string>
 #include <deque>
 #include <vector>
+#include <sstream>
 
 // OpenSSL Includes
 #include "openssl/sha.h"
@@ -34,3 +35,4 @@ Data& getData();
 
 std::ofstream& logStream();
 
+std::string bufAsHex(uint8_t* data, unsigned len);
