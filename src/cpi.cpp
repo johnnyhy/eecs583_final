@@ -49,7 +49,7 @@ void sign(void(**fptrAddr)(), void(*fptrVal())) {
     vector<uint8_t> buf(data.KEY_LEN + data.PTR_LEN, 0);
 
     memcpy(buf.data(), data.KEY.data(), data.KEY_LEN);
-    // memcpy(buf.data() + data.KEY_LEN, (uint8_t*)fptrVal, data.PTR_LEN);
+    //memcpy(buf.data() + data.KEY_LEN, (uint8_t*)fptrVal, data.PTR_LEN);
 
     SHA256(buf.data(), sizeof(buf), data.DIGEST.data());
 
@@ -72,7 +72,7 @@ void auth(void(**fptrAddr)(), void(*fptrVal())) {
     vector<uint8_t> buf(data.KEY_LEN + data.PTR_LEN, 0);
 
     memcpy(buf.data(), data.KEY.data(), data.KEY_LEN);
-    // memcpy(buf.data() + data.KEY_LEN, (uint8_t*)fptrVal, data.PTR_LEN);
+    //memcpy(buf.data() + data.KEY_LEN, (uint8_t*)fptrVal, data.PTR_LEN);
 
     SHA256(buf.data(), sizeof(buf), data.DIGEST.data());
 
@@ -101,4 +101,11 @@ std::ofstream& logStream() {
     if (!s.is_open())
         s.open("cpi.log");
     return s;
+}
+
+std::string bufAsHex(uint8_t* data, unsigned len) {
+    std::stringstream ss;
+    for (unsigned i = 0; i < len; ++i)
+        ss << std::hex << (int)data[i];
+    return ss.str();
 }
