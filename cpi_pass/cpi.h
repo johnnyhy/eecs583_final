@@ -18,7 +18,7 @@ void auth(void(**fptrAddr)(), void(*fptrVal()));
 class Data {
 public:
     Data();
-    std::unordered_map<void(**)(), uint8_t*> signatures;
+    std::unordered_map<void(**)(), std::vector<uint8_t>> signatures;
     std::deque<std::vector<uint8_t>> retSignatures;
     // Options and Config
     static const size_t PTR_LEN = sizeof(void(*)());                   // in bytes for all

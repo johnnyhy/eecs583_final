@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <cstring>
+#include <cassert>
 
 using namespace std;
 
@@ -32,21 +33,27 @@ void ret_auth(uint8_t* retPtrVal) {
     SHA256(buf.data(), sizeof(buf), data.DIGEST.data());
 
     if (data.DIGEST != data.retSignatures.front()) {
-        printf("return address overwritten");
+        fprintf(stderr, "return address overwritten");
         abort();
     }
     data.retSignatures.pop_front();
 }
 
 void sign(void(**fptrAddr)(), void(*fptrVal())) {
-    // Data &data = getData();
-    // uint8_t k[KEY_LEN] = {};
-    // uint8_t ptrval[PTR_LEN] = { 0xff, 0xad, 0xbe, 0xef, 0xde, 0xad, 0xbe, 0xef };
-    // uint8_t digest1[SIG_LEN] = {};
+    Data& data = getData();
 
-    // // plain 256 hash
-    // SHA256(ptrval, PTR_LEN, digest1);
-    // printBufAsHex(digest1, SIG_LEN, errs());
+    if (data.signatures.find(fptrAddr) != data.signatures.end()) {
+        auth(fptrAddr, fptrVal);
+    }
+
+    vector<uint8_t> buf(data.KEY_LEN + data.PTR_LEN, 0);
+
+    memcpy(buf.data(), data.KEY.data(), data.KEY_LEN);
+    memcpy(buf.data() + data.KEY_LEN, (uint8_t*)fptrVal, data.PTR_LEN);
+
+    SHA256(buf.data(), sizeof(buf), data.DIGEST.data());
+
+    data.signatures[fptrAddr] = data.DIGEST;
 
     // // HMAC 
     // uint8_t* digest2 = HMAC(EVP_sha256(), k, KEY_LEN, ptrval, PTR_LEN, nullptr, nullptr);
@@ -59,9 +66,20 @@ void sign(void(**fptrAddr)(), void(*fptrVal())) {
 void auth(void(**fptrAddr)(), void(*fptrVal())) {
     logStream() << "Inside auth" << std::endl;
     Data& data = getData();
-    (void)data;
-    (void)fptrAddr;
-    (void)fptrVal;
+
+    assert(data.signatures.find(fptrAddr) != data.signatures.end());
+
+    vector<uint8_t> buf(data.KEY_LEN + data.PTR_LEN, 0);
+
+    memcpy(buf.data(), data.KEY.data(), data.KEY_LEN);
+    memcpy(buf.data() + data.KEY_LEN, (uint8_t*)fptrVal, data.PTR_LEN);
+
+    SHA256(buf.data(), sizeof(buf), data.DIGEST.data());
+
+    if (data.signatures[fptrAddr] != data.DIGEST) {
+        fprintf(stderr, "stack smashing detected");
+        abort();
+    }
 }
 
 Data::Data() : DATA(vector<uint8_t>(PTR_LEN + KEY_LEN, 0)),
