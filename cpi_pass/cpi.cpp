@@ -1,4 +1,10 @@
 #include "cpi.h"
+#include <string>
+#include <stdlib.h>
+#include <time.h>
+
+using namespace std;
+
 
 void ret_sign(uint8_t* retPtrVal) {
     printf("sign'd yo return bitch\n");
@@ -33,6 +39,19 @@ void auth(void(**fptrAddr)(), void(*fptrVal())) {
     // data.
     (void)fptrAddr;
     (void)fptrVal;
+}
+
+Data::Data() {
+    srand(time(0));
+    for (int i = 0; i < KEY_LEN; i += sizeof(int)) {
+        *((int*)(KEY + 1)) = rand();
+    };
+
+    for (int i = 0; i < len; ++i)
+        tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
+
+
+    return tmp_s;
 }
 
 Data& getData() {

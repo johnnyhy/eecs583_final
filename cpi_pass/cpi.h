@@ -10,16 +10,16 @@ void ret_sign(uint8_t* retPtrVal);
 void sign(void(**fptrAddr)(), void(*fptrVal()));
 void auth(void(**fptrAddr)(), void(*fptrVal()));
 
-struct Data
-{
+struct Data {
 public:
-    std::unordered_map<void *, uint8_t *> signatures;
+    Data();
+    std::unordered_map<void*, uint8_t*> signatures;
     // Options and Config
-    static const size_t PTR_LEN = 8;                   // in bytes for all
-    static const size_t KEY_LEN = 32;
-    static const size_t SIG_LEN = 32;
-    const uint8_t KEY[KEY_LEN] = { };
+    static const size_t PTR_LEN = sizeof(void(*)());                   // in bytes for all
+    static const size_t KEY_LEN = 64;
+    static const size_t SIG_LEN = 256;
+    uint8_t DATA[PTR_LEN] = { };
+    uint8_t KEY[KEY_LEN] = { };
 };
 
-Data &getData();
-
+Data& getData();
