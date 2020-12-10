@@ -69,8 +69,6 @@ namespace {
         Type* ptrToPtrToFunc;
 
         bool runOnModule(Module& M) override {
-            logStream.open(logFile);
-
             // lookup __builtin_return_address
             getRetAddr = Intrinsic::getDeclaration(&M, Intrinsic::returnaddress);
 
@@ -111,8 +109,6 @@ namespace {
         }
 
         void runOnFunction(Function& F) {
-            logStream << std::string(F.getName()) << "\n";
-
             // sign return address on entry
             Instruction& first = *(F.begin())->begin();
             IRBuilder<> builder(&first);

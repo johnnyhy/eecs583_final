@@ -16,10 +16,6 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/Type.h"
 
-const std::string logFile = "cpi.log";
-
 void printBufAsHex(uint8_t* data, unsigned len, llvm::raw_ostream &s);
 
 bool isPtrToFunc(llvm::Type* t);
-
-static std::ofstream logStream;
