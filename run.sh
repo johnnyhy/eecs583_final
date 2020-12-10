@@ -20,7 +20,7 @@ llvm-link cpi.bc $fname.opt.bc -o prog.bc &&
 # compile and run prog
 clang++ -lssl -lcrypto prog.bc -o $fname.demo &&
 chmod +x $fname &&
-./$fname $arg &&
+./$fname.demo $arg &&
 
 # cleanup bitcode files
 rm cpi.bc &&
