@@ -10,7 +10,6 @@ using namespace std;
 void ret_sign(uint8_t* retPtrVal) {
     Data& data = getData();
 
-
     memcpy(data.BUF.data(), data.KEY.data(), data.KEY_LEN);
     memcpy(data.BUF.data() + data.KEY_LEN, &retPtrVal, data.PTR_LEN);
 
@@ -23,7 +22,6 @@ void ret_sign(uint8_t* retPtrVal) {
 
 void ret_auth(uint8_t* retPtrVal) {
     Data& data = getData();
-
 
     memcpy(data.BUF.data(), data.KEY.data(), data.KEY_LEN);
     memcpy(data.BUF.data() + data.KEY_LEN, &retPtrVal, data.PTR_LEN);
