@@ -8,29 +8,49 @@
 using namespace std;
 
 void ret_sign(uint8_t* retPtrVal) {
+    // logStream() << "in ret_sign" << endl;
     Data& data = getData();
 
-    memcpy(data.BUF.data(), data.KEY.data(), data.KEY_LEN);
-    memcpy(data.BUF.data() + data.KEY_LEN, &retPtrVal, data.PTR_LEN);
+    // // data.DIGEST = vector<uint8_t>(digest2, digest2 + 32);
+    std::vector<uint8_t> hash(EVP_MAX_MD_SIZE, 0);
+    unsigned int hashLen;
 
-    logStream() << "Inside ret_sign: 0x" << bufAsHex(data.BUF.data() + data.KEY_LEN, data.BUF.size() - data.KEY_LEN) << std::endl;
+    HMAC(
+        EVP_sha256(),
+        data.KEY.data(),
+        static_cast<int>(data.KEY.size()),
+        (const unsigned char*)&retPtrVal,
+        data.PTR_LEN,
+        hash.data(),
+        &hashLen
+    );
 
-    SHA256(data.BUF.data(), data.BUF.size(), data.DIGEST.data());
 
-    data.retSignatures.push_front(data.DIGEST);
+
+    data.retSignatures.push_front(hash);
 }
 
 void ret_auth(uint8_t* retPtrVal) {
+    // logStream() << "in ret_auth" << endl;
+
     Data& data = getData();
 
-    memcpy(data.BUF.data(), data.KEY.data(), data.KEY_LEN);
-    memcpy(data.BUF.data() + data.KEY_LEN, &retPtrVal, data.PTR_LEN);
+    // // data.DIGEST = vector<uint8_t>(digest2, digest2 + 32);
+    std::vector<uint8_t> hash(EVP_MAX_MD_SIZE, 0);
+    unsigned int hashLen;
 
-    logStream() << "Inside ret_auth: 0x" << bufAsHex(data.BUF.data() + data.KEY_LEN, data.BUF.size() - data.KEY_LEN) << std::endl;
+    HMAC(
+        EVP_sha256(),
+        data.KEY.data(),
+        static_cast<int>(data.KEY.size()),
+        (const unsigned char*)&retPtrVal,
+        data.PTR_LEN,
+        hash.data(),
+        &hashLen
+    );
 
-    SHA256(data.BUF.data(), data.BUF.size(), data.DIGEST.data());
 
-    if (data.DIGEST != data.retSignatures.front()) {
+    if (hash != data.retSignatures.front()) {
         fprintf(stderr, "return address overwritten");
         abort();
     }
@@ -38,6 +58,7 @@ void ret_auth(uint8_t* retPtrVal) {
 }
 
 void sign(void(**fptrAddr)(), void(*fptrVal)()) {
+    // logStream() << "in sign" << endl;
 
     Data& data = getData();
 
@@ -45,43 +66,49 @@ void sign(void(**fptrAddr)(), void(*fptrVal)()) {
         auth(fptrAddr, *fptrAddr);
     }
 
-    memcpy(data.BUF.data(), data.KEY.data(), data.KEY_LEN);
-    memcpy(data.BUF.data() + data.KEY_LEN, &fptrVal, data.PTR_LEN);
+    std::vector<uint8_t> hash(EVP_MAX_MD_SIZE, 0);
+    unsigned int hashLen;
 
-    SHA256(data.BUF.data(), data.BUF.size(), data.DIGEST.data());
+    HMAC(
+        EVP_sha256(),
+        data.KEY.data(),
+        static_cast<int>(data.KEY.size()),
+        (const unsigned char*)&fptrVal,
+        data.PTR_LEN,
+        hash.data(),
+        &hashLen
+    );
 
-    logStream() << "Inside sign: 0x" << bufAsHex(data.BUF.data() + data.KEY_LEN, data.BUF.size() - data.KEY_LEN) << fptrVal << std::endl;
-
-    data.signatures[fptrAddr] = data.DIGEST;
-
-    // // HMAC 
-    // uint8_t* digest2 = HMAC(EVP_sha256(), k, KEY_LEN, ptrval, PTR_LEN, nullptr, nullptr);
-    // printBufAsHex(digest2, SIG_LEN, errs());
-    (void)fptrAddr;
-    (void)fptrVal;
+    // // // data.DIGEST = vector<uint8_t>(digest2, digest2 + 32);
+    data.signatures[fptrAddr] = hash;
 }
 
 void auth(void(**fptrAddr)(), void(*fptrVal)()) {
+    // logStream() << "in auth" << endl;
+
     Data& data = getData();
 
-    assert(data.signatures.find(fptrAddr) != data.signatures.end());
+    std::vector<uint8_t> hash(EVP_MAX_MD_SIZE, 0);
+    unsigned int hashLen;
 
-    memcpy(data.BUF.data(), data.KEY.data(), data.KEY_LEN);
-    memcpy(data.BUF.data() + data.KEY_LEN, &fptrVal, data.PTR_LEN);
+    HMAC(
+        EVP_sha256(),
+        data.KEY.data(),
+        static_cast<int>(data.KEY.size()),
+        (const unsigned char*)&fptrVal,
+        data.PTR_LEN,
+        hash.data(),
+        &hashLen
+    );
+    // // data.DIGEST = vector<uint8_t>(digest2, digest2 + 32);
 
-    logStream() << "Inside auth: 0x" << bufAsHex(data.BUF.data() + data.KEY_LEN, data.BUF.size() - data.KEY_LEN) << std::endl;
-
-    SHA256(data.BUF.data(), data.BUF.size(), data.DIGEST.data());
-
-    if (data.signatures[fptrAddr] != data.DIGEST) {
+    if (data.signatures[fptrAddr] != hash) {
         fprintf(stderr, "stack smashing detected");
         abort();
     }
 }
 
-Data::Data() : BUF(vector<uint8_t>(KEY_LEN + PTR_LEN, 0)),
-KEY(vector<uint8_t>(KEY_LEN, 0)),
-DIGEST(vector<uint8_t>(32, 0)) {
+Data::Data() : KEY(vector<uint8_t>(KEY_LEN, 0)) {
     srand(time(0));
     for (size_t i = 0; i < KEY_LEN; i += sizeof(int)) {
         KEY[i] = rand();

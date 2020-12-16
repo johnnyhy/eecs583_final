@@ -57,7 +57,7 @@ NOTE - in some cases, loop invariant code motion might move the constant calcula
 
 // this constant may need to be adjusted to give reasonable minimum times
 // For best results, times should be about 1.0 seconds for the minimum test run
-int base_iterations = 2000000;
+int base_iterations = 200;
 int iterations = base_iterations;
 
 

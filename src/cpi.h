@@ -26,9 +26,7 @@ public:
     static const size_t KEY_LEN = 64;
     static const size_t SIG_LEN = 256;
 
-    std::vector<uint8_t> BUF;
     std::vector<uint8_t> KEY;
-    std::vector<uint8_t> DIGEST;
 };
 
 Data& getData();
