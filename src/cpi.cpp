@@ -1,5 +1,5 @@
 
-#include "cpi copy.h"
+#include "cpi.h"
 #include <string>
 #include <stdlib.h>
 #include <time.h>
@@ -10,11 +10,11 @@ using namespace std;
 
 void ret_sign(uint8_t* retPtrVal) {
     Data& data = getData();
-
+ 
     memcpy(data.BUF.data(), data.RET_KEY.data(), data.KEY_LEN);
     memcpy(data.BUF.data() + data.KEY_LEN, &retPtrVal, data.PTR_LEN);
 
-    logStream() << "Inside ret_sign: 0x" << bufAsHex(data.BUF.data() + data.KEY_LEN, data.BUF.size() - data.KEY_LEN) << std::endl;
+    // logStream() << "Inside ret_sign: 0x" << bufAsHex(data.BUF.data() + data.KEY_LEN, data.BUF.size() - data.KEY_LEN) << std::endl;
 
     SHA256(data.BUF.data(), data.BUF.size(), data.DIGEST.data());
 
@@ -27,7 +27,7 @@ void ret_auth(uint8_t* retPtrVal) {
     memcpy(data.BUF.data(), data.RET_KEY.data(), data.KEY_LEN);
     memcpy(data.BUF.data() + data.KEY_LEN, &retPtrVal, data.PTR_LEN);
 
-    logStream() << "Inside ret_auth: 0x" << bufAsHex(data.BUF.data() + data.KEY_LEN, data.BUF.size() - data.KEY_LEN) << std::endl;
+    // logStream() << "Inside ret_auth: 0x" << bufAsHex(data.BUF.data() + data.KEY_LEN, data.BUF.size() - data.KEY_LEN) << std::endl;
 
     SHA256(data.BUF.data(), data.BUF.size(), data.DIGEST.data());
 

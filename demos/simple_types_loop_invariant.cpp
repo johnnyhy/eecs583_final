@@ -32,7 +32,7 @@ Assumptions:
 
 // this constant may need to be adjusted to give reasonable minimum times
 // For best results, times should be about 1.0 seconds for the minimum test run
-int iterations = 200000;
+int iterations = 200;
 
 
 // 8000 items, or between 8k and 64k of data
@@ -46,7 +46,7 @@ double init_value = 1.0;
 /******************************************************************************/
 
 // our global arrays of numbers to be operated upon
-
+ 
 double dataDouble[SIZE];
 float dataFloat[SIZE];
 
