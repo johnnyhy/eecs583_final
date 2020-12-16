@@ -33,9 +33,6 @@ for fname in demos/*.cpp; do
     rm $fname.cpilib.bc
 done
 
-# for fname in demos/*.insecure; do
-#     (time ./$fname) &> $fname.time
-# done
 for fname in demos/*.cpilib; do
     (time ./$fname) &> $fname.time
 done
